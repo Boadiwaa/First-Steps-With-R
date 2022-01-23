@@ -1,0 +1,112 @@
+---
+title: "Mini Insights from World Food Programme(version 1)"
+author: "*Boadiwaa*"
+date: "Created on `r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+
+library(readr)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+wfp <- readRDS("C:/Users/pauli/OneDrive/Desktop/wfp.rds")
+```
+
+###  **Overview of Report**
+
+![](https://media.nationalgeographic.org/assets/photos/120/983/091a0e2f-b93d-481b-9a60-db520c87ec33.jpg){width=700px}
+
+The `wfp`dataset shows the production of food commodities per year, town and region throughout Ghana. It contains detailed data on each unit of food commodity produced, including  the type, price, and date(month,year)in which it was produced. There are 16,377 observations(entries) in all. This report answers the following questions:
+
+- What are the most- and least- producing towns and regions?
+- Which food commodities are produced the most, and least?
+- What has been the trend of commodity prices?
+- What are the most and least expensive commodities?
+- What places have the most and least expensive commodity prices?
+- What were the bumper and lean years?
+- What regions lead the production of the best-performing commodity?
+
+### Glimpse of the data:
+
+```{r}
+# Shows the first six rows of the dataset and a summary of the data
+head(wfp)
+summary(wfp)
+```
+
+### Best and worst producing towns and regions.
+The table below shows the best and worst producing towns and regions. The towns and regions have been arranged in descending order of productivity. Kumasi, Ashanti Region is the highest producing town/city. However, overall, Brong Ahafo region tops in productivity.
+
+```{r, echo=FALSE, results='asis'}
+best_and_worst_producers <- wfp %>% group_by(town,region)%>%summarize(Count= n())%>%arrange(desc(Count))
+kable(best_and_worst_producers, caption = "Table 1: Production performance of towns and regions.", col.names = c("Town", "Region", "Number of Entries"))
+
+Region_stats <- wfp %>% group_by(region) %>% summarize(Count = n()) %>% arrange(desc(Count))
+kable(Region_stats, col.names = c("Region", "Number of Entries"), caption="Table 2: Ordering of regions in terms of productivity")
+```
+
+### Most common and least common commodities.
+Amongst the 25 commodities researched, the table below shows the top 10 produced. Maize, Cassava and Yam lead the pack, with Meat, Peppers and Fish trailing behind.
+
+```{r, echo =FALSE}
+Commodity_stats1 <-wfp %>% group_by(comm) %>% summarize(Count = n()) %>% arrange(desc(Count)) %>%
+  top_n(10)
+kable(Commodity_stats1, col.names=c("Commodity","Count"), caption = "Table 3: Count of Commodities")
+```
+
+
+
+### Price trends
+
+The line plot below shows the trend in prices of the top 3 commodities as stated above.It can be seen that with the exception of Cassava which has seen a slight drop in prices in recent years, the other top commodities have seen an increase in prices, with the sharpest increases seen in Yam.
+
+```{r, echo = FALSE, fig.cap="Figure 1: Trend of average price of the top 3 commodities"}
+#Line plot of average price per commodity per period (of the top 3 commodities) to notice the trend in prices.
+comm_trend <- wfp %>%  filter(comm %in% c("Maize - Wholesale","Cassava - Wholesale", "Yam - Wholesale")) %>% group_by(comm, period) %>% summarize(Avg_price = mean(price))
+ggplot(comm_trend, aes(x=period,y=Avg_price, group = comm)) + geom_line(aes(linetype=comm, color = comm))+geom_point(color="brown ", size =3, aes(shape=comm)) + labs(title = "Price Trends of the Top 3 Commodities")
+
+```
+
+### Least expensive and most expensive commodities
+
+The table below shows the overall average prices of food commodities, arranged from the most expensive to the least expensive.
+
+```{r, echo=FALSE}
+average_prices <-wfp %>% group_by(comm) %>% summarize(Avg_price =  mean(price)) %>% arrange(desc(Avg_price))
+kable(average_prices, col.names = c("Commodity", "Average Price"), caption = "Table 3: Average Commodity Prices")
+```
+
+### Regions and their average commodity prices
+
+The table below shows which regions have the highest and lowest commodity prices.
+```{r, echo=FALSE}
+most_and_least_expensive_region_2 <- wfp %>% group_by(region) %>% summarize(Avg_price = mean(price)) %>% arrange(desc(Avg_price))
+kable(most_and_least_expensive_region_2, col.names = c("Region", "Average Price"), caption="Table 4: Average Prices per Region")
+```
+
+### Bumper and lean years
+he table and graph below shows the yearly food production trend. It is interesting to note that the highest food production was seen in 2020 which is globally noted as the "Year of the COVID-19 Pandemic
+```{r, echo=FALSE, fig.cap="Figure 2: Trends of yearly productivity"}
+bumper_and_lean_years <- wfp %>% group_by(year) %>% summarize(Count=n())%>% arrange(desc(Count))
+kable(bumper_and_lean_years, caption = "Table 5: Productivity Per Year", col.names = c("Year", "Count"))
+ggplot(bumper_and_lean_years, aes(x=year, y= Count)) + geom_line(color="darkgreen") + geom_point(color="brown") +labs(title="Yearly Production Trend")
+```
+
+### Areas with the highest production of maize.
+The graph below  shows the highest producers of maize, Region-wise:
+```{r, echo=FALSE, fig.cap="Figure 3: Maize production per region"}
+maize_stat <- wfp %>% filter(comm== "Maize - Wholesale")%>% group_by(region)%>% summarize(Quantity=n()) %>% arrange(desc(Quantity))
+ggplot(maize_stat, aes(x = region, y= Quantity)) + geom_col(aes(fill=region))+ geom_text(aes(label = Quantity), vjust = -0.5)
+
+```
+
+This brings us to the end of the brief report.
+**Thank you!**
+ 
